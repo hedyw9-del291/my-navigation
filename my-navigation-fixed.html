@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的导航</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#182033;--muted:#748096;--line:#e4e8f0;--a:#5967f2;--danger:#d95353;--shadow:0 10px 30px #24365a12}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f7f9ff,#edf1f8);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+body.dark{--bg:#0d1118;--card:#171d28;--text:#edf1f7;--muted:#9aa5b5;--line:#2a3240;background:radial-gradient(circle at top,#20294a,#0d1118 55%)}
+.app{max-width:1180px;margin:auto;padding:24px 18px 55px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.logo{font-size:25px;font-weight:800}.logo b{color:var(--a)}.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn,.icon{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:9px 12px;cursor:pointer}.btn.primary{background:var(--a);border-color:var(--a);color:#fff}.btn.danger{color:var(--danger)}
+.hero{text-align:center;margin:42px 0 30px}.date{color:var(--muted);font-size:13px}.hero h1{font-size:clamp(30px,5vw,48px);margin:8px 0 22px;letter-spacing:-1px}
+.search{max-width:700px;margin:auto;display:flex;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:5px;box-shadow:var(--shadow)}.search input{flex:1;border:0;outline:0;background:transparent;color:var(--text);padding:11px}.search button{border:0;background:var(--a);color:#fff;border-radius:10px;padding:0 18px}
+.cat{margin:30px 0}.cathead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.catnamewrap{display:flex;align-items:center;gap:7px}.catname{font-size:18px;font-weight:750}.headbtn{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:5px;border-radius:7px}.headbtn:hover{background:var(--line);color:var(--text)}.drag{cursor:grab;color:var(--muted);user-select:none}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px}
+.site{position:relative;display:flex;gap:10px;align-items:flex-start;cursor:grab;text-decoration:none;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;box-shadow:var(--shadow);transition:.15s}.site:hover{transform:translateY(-2px)}.site.dragging,.cat.dragging{opacity:.4}.siteicon{width:42px;height:42px;border-radius:11px;background:#eef0ff;display:grid;place-items:center;color:#5663e8;font-weight:800;overflow:hidden;flex:none}.siteicon img{width:25px;height:25px}.txt{min-width:0}.name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.note{font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.edit{position:absolute;right:6px;top:6px;display:none}.site:hover .edit{display:block}.empty{border:1px dashed var(--line);border-radius:12px;padding:20px;text-align:center;color:var(--muted)}
+.cat.collapsed .grid{display:none}.modalbg{display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center;padding:18px;z-index:20}.modalbg.show{display:flex}.modal{width:min(520px,100%);background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:22px}.modal h2{margin:0 0 15px}.field{margin:12px 0}.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}.field input,.field textarea,.field select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text);outline:0}.field textarea{min-height:75px;resize:vertical}.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:45px}
+@media(max-width:600px){.app{padding:18px 13px}.grid{grid-template-columns:1fr}.actions .optional{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="top">
+  <div class="logo">我的<b>·</b>导航</div>
+  <div class="actions">
+    <button class="btn primary" onclick="siteOpen()">＋ 添加网站</button>
+    <button class="btn" onclick="catOpen()">＋ 分类</button>
+    <button class="btn optional" onclick="exportData()">⬇ 备份</button>
+    <button class="btn optional" onclick="document.getElementById('importFile').click()">⬆ 恢复</button>
+    <button class="btn" onclick="theme()">☾</button>
+    <input id="importFile" type="file" accept=".json,application/json" style="display:none" onchange="importData(event)">
+  </div>
+</div>
+
+<div class="hero">
+  <div class="date" id="clock"></div>
+  <h1>今天，也从这里开始。</h1>
+  <form class="search" onsubmit="doSearch(event)">
+    <input id="q" placeholder="搜索网站、备注或内容…" autocomplete="off">
+    <button>搜索</button>
+  </form>
+</div>
+
+<main id="main"></main>
+<div class="footer">网站、分类和备注保存在当前浏览器 · 支持拖动排序 · 支持备份恢复</div>
+</div>
+
+<div class="modalbg" id="sm"><div class="modal">
+<h2 id="st">添加网站</h2>
+<div class="field"><label>网站名称</label><input id="sn" placeholder="例如：ChatGPT"></div>
+<div class="field"><label>网址</label><input id="su" placeholder="https://example.com"></div>
+<div class="field"><label>备注</label><textarea id="so" placeholder="例如：工作常用、客户后台、登录入口……"></textarea></div>
+<div class="field"><label>分类</label><select id="sc"></select></div>
+<div class="foot"><button class="btn danger" id="sd" style="display:none;margin-right:auto" onclick="siteDel()">删除网站</button><button class="btn" onclick="closeM('sm')">取消</button><button class="btn primary" onclick="siteSave()">保存</button></div>
+</div></div>
+
+<div class="modalbg" id="cm"><div class="modal">
+<h2 id="ct">添加分类</h2>
+<div class="field"><label>分类名称</label><input id="cn" placeholder="例如：工作、AI、娱乐"></div>
+<div class="foot"><button class="btn" onclick="closeM('cm')">取消</button><button class="btn primary" onclick="catSave()">保存</button></div>
+</div></div>
+
+<script>
+const KEY='myNavV3';
+let d=JSON.parse(localStorage.getItem(KEY)||'null')||{
+ cats:[{id:'c1',name:'常用'},{id:'c2',name:'AI & 效率'},{id:'c3',name:'娱乐 & 社区'}],
+ sites:[
+  {id:'s1',cat:'c1',name:'Google',url:'https://www.google.com',note:'搜索'},
+  {id:'s2',cat:'c1',name:'Gmail',url:'https://mail.google.com',note:'邮件'},
+  {id:'s3',cat:'c1',name:'Google Drive',url:'https://drive.google.com',note:'云端文件'},
+  {id:'s4',cat:'c2',name:'ChatGPT',url:'https://chatgpt.com',note:'AI 助手'},
+  {id:'s5',cat:'c2',name:'Claude',url:'https://claude.ai',note:'AI 助手'},
+  {id:'s6',cat:'c2',name:'Notion',url:'https://www.notion.so',note:'知识管理'},
+  {id:'s7',cat:'c3',name:'YouTube',url:'https://www.youtube.com',note:'视频'},
+  {id:'s8',cat:'c3',name:'Reddit',url:'https://www.reddit.com',note:'社区'},
+  {id:'s9',cat:'c3',name:'Spotify',url:'https://open.spotify.com',note:'音乐'}
+ ]};
+let editSite=null,editCat=null;
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function save(){localStorage.setItem(KEY,JSON.stringify(d))}
+function render(){
+ const q=document.getElementById('q').value.trim().toLowerCase(),main=document.getElementById('main');main.innerHTML='';
+ d.cats.forEach(c=>{
+  const sites=d.sites.filter(s=>s.cat===c.id&&(!q||(s.name+' '+s.note+' '+s.url).toLowerCase().includes(q)));
+  if(q&&!sites.length)return;
+  const sec=document.createElement('section');sec.className='cat';sec.dataset.cat=c.id;sec.draggable=!q;
+  if(JSON.parse(localStorage.navCollapsed||'{}')[c.id])sec.classList.add('collapsed');
+  sec.innerHTML=`<div class="cathead">
+   <div class="catnamewrap"><span class="drag" title="拖动分类">⠿</span><button class="headbtn" onclick="toggleCat('${c.id}')">${sec.classList.contains('collapsed')?'▶':'▼'}</button><div class="catname">${esc(c.name)}</div></div>
+   <div><button class="headbtn" title="编辑分类" onclick="catOpen('${c.id}')">✎</button><button class="headbtn" title="删除分类" onclick="catDel('${c.id}')">🗑</button></div>
+  </div>`;
+  const grid=document.createElement('div');grid.className='grid';
+  sites.forEach(s=>{
+   let host='';try{host=new URL(s.url).hostname.replace(/^www\./,'')}catch{}
+   const a=document.createElement('a');a.className='site';a.href=s.url;a.target='_blank';a.rel='noopener';a.draggable=!q;a.dataset.site=s.id;
+   a.innerHTML=`<span class="drag" title="拖动网站">⠿</span><div class="siteicon">${host?`<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64" onerror="this.style.display='none';this.parentElement.textContent='🔗'">`:'🔗'}</div>
+   <div class="txt"><div class="name">${esc(s.name)}</div><div class="note">${esc(s.note||host)}</div></div>
+   <button class="edit icon" title="编辑网站" onclick="event.preventDefault();event.stopPropagation();siteOpen('${s.id}')">✎</button>`;
+   grid.appendChild(a);
+  });
+  if(!sites.length)grid.innerHTML='<div class="empty">这个分类还没有网站</div>';
+  sec.appendChild(grid);main.appendChild(sec);
+ });
+ if(!main.children.length)main.innerHTML='<div class="empty">没有找到匹配的网站</div>';
+ setupDrag();
+}
+function siteOpen(id){
+ editSite=id||null;const s=d.sites.find(x=>x.id===id);
+ document.getElementById('st').textContent=s?'编辑网站':'添加网站';
+ document.getElementById('sn').value=s?.name||'';document.getElementById('su').value=s?.url||'';document.getElementById('so').value=s?.note||'';
+ document.getElementById('sc').innerHTML=d.cats.map(c=>`<option value="${c.id}" ${c.id===s?.cat?'selected':''}>${esc(c.name)}</option>`).join('');
+ document.getElementById('sd').style.display=s?'inline-block':'none';document.getElementById('sm').classList.add('show');setTimeout(()=>document.getElementById('sn').focus(),30);
+}
+function siteSave(){
+ const name=document.getElementById('sn').value.trim(),url0=document.getElementById('su').value.trim();
+ if(!name||!url0){alert('请填写网站名称和网址');return}
+ let url=/^https?:\/\//i.test(url0)?url0:'https://'+url0;
+ const v={name,url,note:document.getElementById('so').value.trim(),cat:document.getElementById('sc').value};
+ if(editSite)Object.assign(d.sites.find(s=>s.id===editSite),v);else d.sites.push({id:'s'+Date.now(),...v});
+ save();closeM('sm');render();
+}
+function siteDel(){
+ if(!editSite)return;const s=d.sites.find(x=>x.id===editSite);
+ if(confirm(`确定删除「${s.name}」吗？`)){d.sites=d.sites.filter(x=>x.id!==editSite);save();closeM('sm');render()}
+}
+function catOpen(id){editCat=id||null;const c=d.cats.find(x=>x.id===id);document.getElementById('ct').textContent=c?'编辑分类':'添加分类';document.getElementById('cn').value=c?.name||'';document.getElementById('cm').classList.add('show');setTimeout(()=>document.getElementById('cn').focus(),30)}
+function catSave(){
+ const n=document.getElementById('cn').value.trim();if(!n){alert('请输入分类名称');return}
+ if(editCat)d.cats.find(c=>c.id===editCat).name=n;else d.cats.push({id:'c'+Date.now(),name:n});
+ save();closeM('cm');render();
+}
+function catDel(id){
+ const c=d.cats.find(x=>x.id===id),n=d.sites.filter(s=>s.cat===id).length;
+ if(confirm(`确定删除分类「${c.name}」吗？${n?`该分类下的 ${n} 个网站也会删除。`:''}`)){d.cats=d.cats.filter(x=>x.id!==id);d.sites=d.sites.filter(s=>s.cat!==id);save();render()}
+}
+function toggleCat(id){const x=JSON.parse(localStorage.navCollapsed||'{}');x[id]=!x[id];localStorage.navCollapsed=JSON.stringify(x);render()}
+function closeM(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('.modalbg').forEach(x=>x.addEventListener('click',e=>{if(e.target===x)x.classList.remove('show')}));
+
+function setupDrag(){
+ document.querySelectorAll('.cat[draggable="true"]').forEach(el=>{
+  el.addEventListener('dragstart',e=>{e.dataTransfer.setData('cat',el.dataset.cat);el.classList.add('dragging')});
+  el.addEventListener('dragend',()=>el.classList.remove('dragging'));
+  el.addEventListener('dragover',e=>e.preventDefault());
+  el.addEventListener('drop',e=>{
+   e.preventDefault();const id=e.dataTransfer.getData('cat'),target=el.dataset.cat;if(!id||id===target)return;
+   const a=d.cats.findIndex(x=>x.id===id),b=d.cats.findIndex(x=>x.id===target);if(a<0||b<0)return;
+   const [item]=d.cats.splice(a,1);d.cats.splice(b,0,item);save();render();
+  });
+ });
+ document.querySelectorAll('.site[draggable="true"]').forEach(el=>{
+  el.addEventListener('dragstart',e=>{e.dataTransfer.setData('site',el.dataset.site);el.classList.add('dragging')});
+  el.addEventListener('dragend',()=>el.classList.remove('dragging'));
+  el.addEventListener('dragover',e=>e.preventDefault());
+  el.addEventListener('drop',e=>{
+   e.preventDefault();const id=e.dataTransfer.getData('site'),target=el.dataset.site;if(!id||id===target)return;
+   const a=d.sites.findIndex(x=>x.id===id),b=d.sites.findIndex(x=>x.id===target);if(a<0||b<0)return;
+   const [item]=d.sites.splice(a,1);d.sites.splice(b,0,item);save();render();
+  });
+ });
+}
+function exportData(){const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='我的导航-备份.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function importData(e){
+ const f=e.target.files[0];if(!f)return;const r=new FileReader();
+ r.onload=()=>{try{const x=JSON.parse(r.result);if(!Array.isArray(x.cats)||!Array.isArray(x.sites))throw 0;if(confirm('恢复备份会覆盖当前导航数据，确定继续吗？')){d=x;save();render();alert('恢复成功')}}catch{alert('备份文件格式不正确')}e.target.value=''};r.readAsText(f)
+}
+function theme(){document.body.classList.toggle('dark');localStorage.navDark=document.body.classList.contains('dark')}
+function doSearch(e){e.preventDefault();const q=document.getElementById('q').value.trim();if(q)window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank')}
+document.getElementById('q').addEventListener('input',render);
+function clock(){const x=new Date();document.getElementById('clock').textContent=x.toLocaleDateString('zh-CN',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' · '+x.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}
+if(localStorage.navDark==='true')document.body.classList.add('dark');clock();setInterval(clock,1000);render();
+</script>
+</body>
+</html>
